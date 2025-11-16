@@ -4,6 +4,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Http\JsonResponse;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -19,5 +23,23 @@ return Application::configure(basePath: dirname(__DIR__))
         
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        
+        $exceptions->renderable(function (NotFoundHttpException $e, Request $request) {
+            
+            if ($request->wantsJson() || $request->is('api/*')) {
+                if (str_contains($e->getMessage(), 'No query results for model')) {
+                    
+                    return new JsonResponse([
+                        'success' => false,
+                        'message' => 'Data tidak ditemukan.'
+                    ], 404); 
+                }
+
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Resource tidak ditemukan.'
+                ], 404);
+            }
+        });
+
     })->create();

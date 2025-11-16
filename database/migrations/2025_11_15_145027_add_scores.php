@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('materials', function (Blueprint $table) {
+        Schema::create('scores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('classroom_id')->constrained('classrooms')->onDelete('cascade');
-            $table->string('title');
-            $table->text('material')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->string('file_path')->nullable();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('quiz_id')->constrained('quizzes')->onDelete('cascade');
+            $table->integer('score'); 
+            $table->integer('correct_count'); 
+            $table->integer('total_count'); 
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('materials');
+        //
     }
 };

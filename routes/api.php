@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\API\Teacher\MaterialController;
+use App\Http\Controllers\API\Teacher\QuizController;
+use App\Http\Controllers\API\Teacher\QuestionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthenticationController;
 use App\Http\Controllers\API\Teacher\ClassroomController;
@@ -14,6 +17,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:teacher')->prefix('teacher')->name('teacher.')->group(function () {
         Route::apiResource('classrooms', ClassroomController::class);
+        Route::apiResource('materials', MaterialController::class)->except(['update']);
+        Route::post('materials/{material}', [MaterialController::class, 'update'])->name('materials.update');
+        Route::apiResource('quizzes', QuizController::class);
+        Route::apiResource('quizzes.questions', QuestionController::class)
+        ->scoped()
+        ->shallow();
     });
 
     Route::middleware('role:student')->prefix('student')->name('student.')->group(function () {
