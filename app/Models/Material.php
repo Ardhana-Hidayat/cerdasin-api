@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Material extends Model
 {
@@ -18,4 +19,26 @@ class Material extends Model
     {
         return $this->belongsTo(Classroom::class);
     }
+
+    protected function getThumbnailUrlAttribute(): ?string
+    {
+        if ($this->thumbnail) {
+            return asset('storage/' . $this->thumbnail);
+        }
+        return null;
+    }
+
+
+    protected function getFilePathUrlAttribute(): ?string
+    {
+        if ($this->file_path) {
+            return asset('storage/' . $this->file_path);
+        }
+        return null;
+    }
+    
+    protected $appends = [
+        'thumbnail_url', 
+        'file_path_url'
+    ];
 }
