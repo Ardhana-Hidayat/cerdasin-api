@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Student\StudentClassroomController;
+use App\Http\Controllers\Api\Student\StudentMaterialController;
+use App\Http\Controllers\Api\Student\StudentQuizController;
 use App\Http\Controllers\API\Teacher\MaterialController;
 use App\Http\Controllers\API\Teacher\QuizController;
 use App\Http\Controllers\API\Teacher\QuestionController;
@@ -21,11 +24,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('materials/{material}', [MaterialController::class, 'update'])->name('materials.update');
         Route::apiResource('quizzes', QuizController::class);
         Route::apiResource('quizzes.questions', QuestionController::class)
-        ->scoped()
-        ->shallow();
+            ->scoped()
+            ->shallow();
     });
 
     Route::middleware('role:student')->prefix('student')->name('student.')->group(function () {
-        // Isi route untuk student nanti
+        Route::post('select-class', [StudentClassroomController::class, 'selectClass']);
+        Route::apiResource('materials', StudentMaterialController::class)->only(['index', 'show']);
+
+        Route::get('quizzes', [StudentQuizController::class, 'index']);
+        Route::get('quizzes/{quiz}', [StudentQuizController::class, 'show']);
+
+        Route::post('quizzes/{quiz}/submit', [StudentQuizController::class, 'submit']);
     });
 });

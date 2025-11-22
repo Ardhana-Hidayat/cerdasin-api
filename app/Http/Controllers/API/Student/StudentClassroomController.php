@@ -26,20 +26,24 @@ class StudentClassroomController extends Controller
 
     public function selectClass(Request $request)
     {
-        $validatedData = $request->validate([
+        $request->validate([
             'class_id' => 'required|exists:classrooms,id',
         ]);
 
-        try {
-            $user = auth()->user();
-            $user->selected_class_id = $validatedData['class_id'];
-            $user->save(); 
+        $user = $request->user();
 
-            $user->load('selectedClass');
-            return $this->success($user, 'Kelas berhasil dipilih!');
-        
-        } catch (Exception $e) {
-            return $this->error('Gagal memilih kelas: ' . $e->getMessage());
-        }
+        $user->selected_class_id = $request->input('class_id');
+        $user->save();
+
+        $user->load('selectedClass');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kelas berhasil dipilih!',
+            'data' => [
+                'user' => $user,
+                'selected_class' => $user->selectedClass
+            ]
+        ]);
     }
 }
