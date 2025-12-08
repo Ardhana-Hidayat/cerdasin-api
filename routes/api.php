@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:student')->prefix('student')->name('student.')->group(function () {
+        Route::get('classrooms', [StudentClassroomController::class, 'getClassrooms']);
         Route::post('select-class', [StudentClassroomController::class, 'selectClass']);
         Route::apiResource('materials', StudentMaterialController::class)->only(['index', 'show']);
 
