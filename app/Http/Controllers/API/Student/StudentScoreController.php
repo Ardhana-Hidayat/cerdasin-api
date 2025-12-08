@@ -11,20 +11,24 @@ class StudentScoreController extends Controller
 {
     use ApiResponse;
 
-    public function show(Score $score)
+    public function show($id)
     {
         try {
-            $user = auth()->user();
-            
-            if ($user->id != $score->user_id) {
-                return $this->error('Akses ditolak.', 403);
-            }
-            
-            $score->load('quiz');
+            $score = Score::with('quiz')->find($id);
 
-            return $this->success($score, 'Data skor berhasil diambil.');
+            if (!$score) {
+                return $this->error('Data nilai tidak ditemukan.', 404);
+            }
+
+            $user = auth()->user();
+            if ($score->user_id != $user->id) {
+                return $this->error('Akses ditolak. Ini bukan nilai Anda.', 403);
+            }
+
+            return $this->success($score, 'Detail nilai berhasil diambil.');
+
         } catch (Exception $e) {
-            return $this->error('Gagal mengambil data skor: ' . $e->getMessage());
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

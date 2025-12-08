@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Student\StudentClassroomController;
 use App\Http\Controllers\Api\Student\StudentMaterialController;
 use App\Http\Controllers\Api\Student\StudentQuizController;
+use App\Http\Controllers\Api\Student\StudentScoreController;
 use App\Http\Controllers\API\Teacher\MaterialController;
 use App\Http\Controllers\API\Teacher\QuizController;
 use App\Http\Controllers\API\Teacher\QuestionController;
@@ -37,5 +38,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('quizzes/{quiz}', [StudentQuizController::class, 'show']);
 
         Route::post('quizzes/{quiz}/submit', [StudentQuizController::class, 'submit']);
+        Route::get('scores/{id}', [StudentScoreController::class, 'show']);
     });
 });
