@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Material;
 use App\Traits\ApiResponse;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class StudentMaterialController extends Controller
 {
@@ -13,23 +14,16 @@ class StudentMaterialController extends Controller
 
     public function index()
     {
-        try {
-            $user = auth()->user();
-            $selectedClassId = $user->selected_class_id;
+        $user = Auth::user();
 
-            if (!$selectedClassId) {
-                return $this->error('Silakan pilih kelas terlebih dahulu untuk melihat materi.', 400);
-            }
+        $materials = Material::where('classroom_id', $user->selected_class_id)->get();
 
-            $materials = Material::where('classroom_id', $selectedClassId)
-                ->orderBy('created_at', 'desc') 
-                ->get();
-
-            return $this->success($materials, 'Data materi berhasil diambil.');
-
-        } catch (Exception $e) {
-            return $this->error('Gagal mengambil data materi: ' . $e->getMessage());
-        }
+        return response()->json([
+            'response_code' => 200,
+            'status' => 'success',
+            'message' => 'Daftar materi berhasil diambil',
+            'data' => $materials
+        ]);
     }
 
     public function show(Material $material)

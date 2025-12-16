@@ -8,49 +8,75 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
-use Illuminate\Validation\Rule;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class AuthenticationController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|in:teacher,student',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role' => $request->role,
-        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'response_code' => 400,
+                'status' => 'error',
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 400);
+        }
 
-        $token = $user->createToken('authToken')->plainTextToken;
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'role' => $request->role,
+            ]);
 
-        return response()->json([
-            'response_code' => 200,
-            'status' => 'success',
-            'message' => 'Register successful',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-            'token' => $token
-        ]);
+            $token = $user->createToken('authToken')->plainTextToken;
+
+            return response()->json([
+                'response_code' => 200,
+                'status' => 'success',
+                'message' => 'Registrasi berhasil',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
+                'token' => $token
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response_code' => 500,
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat registrasi: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function login(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'response_code' => 400,
+                'status' => 'error',
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 400);
+        }
 
         $user = User::where('email', $request->email)->first();
 
@@ -63,13 +89,12 @@ class AuthenticationController extends Controller
         }
 
         $user->tokens()->delete();
-
         $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
             'response_code' => 200,
             'status' => 'success',
-            'message' => 'Login successful',
+            'message' => 'Login berhasil',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -89,14 +114,14 @@ class AuthenticationController extends Controller
                 return response()->json([
                     'response_code' => 404,
                     'status' => 'error',
-                    'message' => 'User not found',
+                    'message' => 'Pengguna tidak ditemukan',
                 ], 404);
             }
 
             return response()->json([
                 'response_code' => 200,
                 'status' => 'success',
-                'message' => 'Fetched user info successfully',
+                'message' => 'Data pengguna berhasil diambil',
                 'user_info' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -110,7 +135,7 @@ class AuthenticationController extends Controller
             return response()->json([
                 'response_code' => 500,
                 'status' => 'error',
-                'message' => 'Failed to fetch user info',
+                'message' => 'Gagal mengambil data pengguna',
             ], 500);
         }
     }
@@ -124,14 +149,14 @@ class AuthenticationController extends Controller
                 return response()->json([
                     'response_code' => 200,
                     'status' => 'success',
-                    'message' => 'Successfully logged out',
+                    'message' => 'Berhasil logout',
                 ]);
             }
 
             return response()->json([
                 'response_code' => 401,
                 'status' => 'error',
-                'message' => 'User not authenticated',
+                'message' => 'Pengguna belum login atau sesi tidak valid',
             ], 401);
         } catch (\Exception $e) {
             Log::error('Logout Error: ' . $e->getMessage());
@@ -139,7 +164,54 @@ class AuthenticationController extends Controller
             return response()->json([
                 'response_code' => 500,
                 'status' => 'error',
-                'message' => 'An error occurred during logout',
+                'message' => 'Terjadi kesalahan saat logout',
+            ], 500);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            $validator = Validator::make($request->all(), [
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:6|confirmed',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'response_code' => 400,
+                    'status' => 'error',
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 400);
+            }
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'response_code' => 400,
+                    'status' => 'error',
+                    'message' => 'Password lama yang Anda masukkan salah'
+                ], 400);
+            }
+
+            $user->password = Hash::make($request->new_password);
+            $user->save();
+
+            return response()->json([
+                'response_code' => 200,
+                'status' => 'success',
+                'message' => 'Password berhasil diubah. Silakan login kembali.',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Change Password Error: ' . $e->getMessage());
+
+            return response()->json([
+                'response_code' => 500,
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat mengubah password',
             ], 500);
         }
     }

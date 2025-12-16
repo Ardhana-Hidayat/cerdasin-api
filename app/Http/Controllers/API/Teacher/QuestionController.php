@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API\Teacher;
+namespace App\Http\Controllers\Api\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Question;
@@ -16,7 +16,7 @@ class QuestionController extends Controller
     public function index(Quiz $quiz)
     {
         try {
-            $quiz->load('questions'); 
+            $quiz->load('questions');
             return $this->success($quiz->questions, 'Data pertanyaan berhasil diambil.');
         } catch (Exception $e) {
             return $this->error('Gagal mengambil data pertanyaan: ' . $e->getMessage());
@@ -31,7 +31,7 @@ class QuestionController extends Controller
             'option_b' => 'required|string',
             'option_c' => 'required|string',
             'option_d' => 'required|string',
-            'correct_answer' => 'required|in:a,b,c,d', 
+            'correct_answer' => 'required|in:a,b,c,d',
         ]);
 
         try {
@@ -42,27 +42,35 @@ class QuestionController extends Controller
         }
     }
 
-    public function show(Question $question)
+    public function show(Quiz $quiz, Question $question)
     {
         try {
+            if ($question->quiz_id !== $quiz->id) {
+                return $this->error('Pertanyaan ini tidak termasuk dalam kuis yang dipilih.', 404);
+            }
+
             return $this->success($question, 'Detail pertanyaan berhasil diambil.');
         } catch (Exception $e) {
             return $this->error('Gagal mengambil detail pertanyaan: ' . $e->getMessage());
         }
     }
 
-    public function update(Request $request, Question $question)
+    public function update(Request $request, Quiz $quiz, Question $question)
     {
-        $validatedData = $request->validate([
-            'question' => 'required|string',
-            'option_a' => 'required|string',
-            'option_b' => 'required|string',
-            'option_c' => 'required|string',
-            'option_d' => 'required|string',
-            'correct_answer' => 'required|in:a,b,c,d',
-        ]);
-
         try {
+            if ($question->quiz_id !== $quiz->id) {
+                return $this->error('Pertanyaan ini tidak termasuk dalam kuis yang dipilih.', 404);
+            }
+
+            $validatedData = $request->validate([
+                'question' => 'required|string',
+                'option_a' => 'required|string',
+                'option_b' => 'required|string',
+                'option_c' => 'required|string',
+                'option_d' => 'required|string',
+                'correct_answer' => 'required|in:a,b,c,d',
+            ]);
+
             $question->update($validatedData);
             return $this->success($question, 'Pertanyaan berhasil diperbarui.');
         } catch (Exception $e) {
@@ -70,9 +78,13 @@ class QuestionController extends Controller
         }
     }
 
-    public function destroy(Question $question)
+    public function destroy(Quiz $quiz, Question $question)
     {
         try {
+            if ($question->quiz_id !== $quiz->id) {
+                return $this->error('Pertanyaan ini tidak termasuk dalam kuis yang dipilih.', 404);
+            }
+
             $question->delete();
             return $this->success(null, 'Pertanyaan berhasil dihapus.');
         } catch (Exception $e) {

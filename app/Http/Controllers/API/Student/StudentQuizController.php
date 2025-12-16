@@ -8,6 +8,7 @@ use App\Models\Score;
 use App\Traits\ApiResponse;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class StudentQuizController extends Controller
 {
@@ -15,24 +16,16 @@ class StudentQuizController extends Controller
 
     public function index()
     {
-        try {
-            $user = auth()->user();
-            $selectedClassId = $user->selected_class_id;
+        $user = Auth::user();
 
-            if (!$selectedClassId) {
-                return $this->error('Silakan pilih kelas terlebih dahulu.', 400);
-            }
+        $quizzes = Quiz::where('classroom_id', $user->selected_class_id)->get();
 
-            $quizzes = Quiz::where('classroom_id', $selectedClassId)
-                ->withCount('questions') 
-                ->with('myScore')       
-                ->get();
-
-            return $this->success($quizzes, 'Data kuis berhasil diambil.');
-
-        } catch (Exception $e) {
-            return $this->error('Gagal mengambil data kuis: ' . $e->getMessage());
-        }
+        return response()->json([
+            'response_code' => 200,
+            'status' => 'success',
+            'message' => 'Daftar kuis berhasil diambil',
+            'data' => $quizzes
+        ]);
     }
 
     public function show(Quiz $quiz)
